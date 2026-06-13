@@ -33,9 +33,45 @@ WHITE = (255, 255, 255)
 GRAY = (150, 150, 150)
 DARK_GRAY = (100, 100, 100)
 
+HEIGHT = 450
+WIDTH = 400
+ACC = 0.5 
+FRIC = -0.12 
+
+displaysurface = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Platformer")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # screen information
-SCREEN_WIDTH = 400
-SCREEN_HEIGHT = 600
 SPEED = 25
 SCORE = 0
 HIGH_SCORE = 0 
@@ -49,10 +85,7 @@ IS_MUTED = False
 font = pygame.font.SysFont("Verdana", 40)
 font_small = pygame.font.SysFont("Verdana", 30)
 
-# initializing display window
-DISPLAYSURF = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-
-# making window fullscreen
+# making fullscreen window
 DISPLAYSURF = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 SCREEN_WIDTH, SCREEN_HEIGHT = DISPLAYSURF.get_size()
 
