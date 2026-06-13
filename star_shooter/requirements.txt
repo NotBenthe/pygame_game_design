@@ -1,0 +1,7 @@
+# requirements
+os 
+sys 
+warnings
+pygame
+random
+time

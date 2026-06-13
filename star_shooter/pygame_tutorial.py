@@ -60,16 +60,13 @@ DISPLAYSURF.fill(WHITE)
 pygame.display.set_caption("star shooter")
 
 # setting the background
-background = pygame.image.load("background.png")
+background = pygame.image.load("background.png").convert()
 background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # playing music
 pygame.mixer.music.load("background.wav")
 pygame.mixer.music.play(-1)  # -1 so it repeats
 pygame.mixer.music.set_volume(VOLUME_LEVEL/10.0)
-
-enemies = pygame.sprite.Group()
-all_sprites = pygame.sprite.Group()
 
 # making the player
 class Player(pygame.sprite.Sprite):
@@ -92,23 +89,23 @@ class Player(pygame.sprite.Sprite):
         # moving up/down
         if self.rect.top > 0:
             if pressed_keys[K_UP]:
-                self.rect.move_ip(0, -1 * SPEED)
+                self.rect.move_ip(0, -1 * SPEED - 5)
         if self.rect.bottom < SCREEN_HEIGHT:
             if pressed_keys[K_DOWN]:
-                self.rect.move_ip(0, SPEED)
+                self.rect.move_ip(0, SPEED - 5)
 
         # moving left/right
         if self.rect.left > 0:
             if pressed_keys[K_LEFT]:
-                self.rect.move_ip(-1 * SPEED, 0)
+                self.rect.move_ip(-1 * SPEED - 5, 0)
         if self.rect.right < SCREEN_WIDTH:
             if pressed_keys[K_RIGHT]:
-                self.rect.move_ip(SPEED, 0)
+                self.rect.move_ip(SPEED - 5, 0)
     
 
 # making the enemy
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, enemy_group):
         # initiating super
         super().__init__()
 
@@ -123,7 +120,7 @@ class Enemy(pygame.sprite.Sprite):
         valid_position = False 
         while not valid_position:
             self.rect.center = (random.randint(50, SCREEN_WIDTH - 50), random.randint(-400, -200))
-            if not pygame.sprite.spritecollideany(self, enemies):
+            if not pygame.sprite.spritecollideany(self, enemy_group):
                 valid_position = True 
 
     def move(self):
@@ -289,6 +286,9 @@ def game_loop():
     SCORE = 0
     background_y = 0
 
+    enemies = pygame.sprite.Group()
+    all_sprites = pygame.sprite.Group()
+
     P1 = Player()
     all_sprites.add(P1)
 
@@ -315,7 +315,7 @@ def game_loop():
             # spawning enemies
             if event.type == SPAWN_ENEMY:
                 if len(enemies) < MAX_ENEMIES:
-                    E = Enemy()
+                    E = Enemy(enemies)
                     enemies.add(E)
                     all_sprites.add(E)
 
