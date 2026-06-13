@@ -33,7 +33,7 @@ WHITE = (255, 255, 255)
 # screen information
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 600
-SPEED = 5
+SPEED = 25
 SCORE = 0
 
 # setting up fonts
@@ -54,6 +54,7 @@ pygame.display.set_caption("pygame tutorial")
 # setting the background
 background = pygame.image.load("AnimatedStreet.png")
 background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+background_y = 0  # tracking vertical position
 
 # playing music
 pygame.mixer.music.load("background.wav")
@@ -73,6 +74,7 @@ class Player(pygame.sprite.Sprite):
         # creating rectangular hitbox
         self.rect = self.image.get_rect()
         self.rect.center = (SCREEN_WIDTH/2, SCREEN_HEIGHT-80)
+        self.mask = pygame.mask.from_surface(pygame.transform.scale(self.image, (65, 160)))
 
     def move(self):
         pressed_keys = pygame.key.get_pressed()
@@ -80,18 +82,18 @@ class Player(pygame.sprite.Sprite):
         # moving up/down
         if self.rect.top > 0:
             if pressed_keys[K_UP]:
-                self.rect.move_ip(0, -5)
+                self.rect.move_ip(0, -1 * SPEED)
         if self.rect.bottom < SCREEN_WIDTH:
             if pressed_keys[K_DOWN]:
-                self.rect.move_ip(0, 5)
+                self.rect.move_ip(0, SPEED)
 
         # moving left/right
         if self.rect.left > 0:
             if pressed_keys[K_LEFT]:
-                self.rect.move_ip(-5, 0)
+                self.rect.move_ip(-1 * SPEED, 0)
         if self.rect.right < SCREEN_WIDTH:
             if pressed_keys[K_RIGHT]:
-                self.rect.move_ip(5, 0)
+                self.rect.move_ip(SPEED, 0)
     
 
 # making the enemy
@@ -101,10 +103,11 @@ class Enemy(pygame.sprite.Sprite):
         super().__init__()
 
         self.image = pygame.image.load("Enemy.png")
-        self.image = pygame.transform.scale(self.image, (80, 120))
+        self.image = pygame.transform.scale(self.image, (100, 200))
 
         self.rect = self.image.get_rect()
         self.rect.center = (random.randint(40, SCREEN_WIDTH-40), 0)
+        self.mask = pygame.mask.from_surface(pygame.transform.scale(self.image, (65, 160)))
 
     def move(self):
         global SCORE
@@ -147,10 +150,17 @@ while True:
     # drawing the enemy and player
     DISPLAYSURF.fill(WHITE)
 
+    # moving the background 
+    background_y += 0.5 * SPEED 
+    if background_y >= SCREEN_HEIGHT:
+        background_y = 0
+
     # drqwing the background and score
-    DISPLAYSURF.blit(background, (0, 0))
+    DISPLAYSURF.blit(background, (0, background_y))
+    DISPLAYSURF.blit(background, (0, background_y - SCREEN_HEIGHT))
+
     scores = font_small.render(str(SCORE), True, BLACK)
-    DISPLAYSURF.blit(scores, (10, 10))
+    DISPLAYSURF.blit(scores, (40, 40))
 
     # drawing the entities
     for entity in all_sprites:
@@ -158,7 +168,7 @@ while True:
         entity.move()
         
     # collision
-    if pygame.sprite.spritecollideany(P1, enemies):
+    if pygame.sprite.spritecollide(P1, enemies, False, pygame.sprite.collide_mask):
         # playing crashing sound
         pygame.mixer.Sound('crash.wav').play()
         time.sleep(0.5)
