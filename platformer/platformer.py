@@ -1,5 +1,5 @@
 """ 
-Pygame tutorial: following https://coderslegacy.com/python/python-pygame-tutorial/ 
+Pygame platformer tutorial: following https://coderslegacy.com/python/pygame-platformer-game-development/
 
 @author: B.A. Sturre
 
@@ -24,6 +24,8 @@ pygame.init()
 FPS = 60
 FramePerSec = pygame.time.Clock()
 
+vec = pygame.math.Vector2  # 2 for 2D
+
 # colours
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
@@ -38,17 +40,90 @@ WIDTH = 400
 ACC = 0.5 
 FRIC = -0.12 
 
+VOLUME_LEVEL = 5
+PRE_MUTE_VOLUTE = 5
+IS_MUTED = False 
+
+# playing music
+pygame.mixer.music.load("background.wav")
+pygame.mixer.music.play(-1)  # -1 so it repeats
+pygame.mixer.music.set_volume(VOLUME_LEVEL/10.0)
+
+# setting display
 displaysurface = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Platformer")
+background = pygame.image.load("background.png").convert()
+background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 
 
+# making the player
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.surf = pygame.Surface((30, 30))
+        self.surf.fill((128, 255, 40))
+        self.rect = self.surf.get_rect(center=(10, 420))
+
+        # movement
+        self.pos = vec((10, 385))
+        self.vel = vec(0, 0)
+        self.acc = vec(0, 0)
+
+    def move(self): 
+        self.acc = vec(0, 0)
+
+        pressed_keys = pygame.key.get_pressed()
+
+        if pressed_keys[K_LEFT]: 
+            self.acc.x = -ACC 
+        if pressed_keys[K_RIGHT]: 
+            self.acc.x = ACC 
+        
+        self.acc.x += self.vel.x * FRIC
+        self.vel += self.acc
+        self.pos += self.vel + 0.5 * self.acc
+         
+        if self.pos.x > WIDTH:
+            self.pos.x = 0
+        if self.pos.x < 0:
+            self.pos.x = WIDTH
+             
+        self.rect.midbottom = self.pos
 
 
+# making the platform
+class platform(pygame.sprite.Sprite):
+    def __init__(self): 
+        super().__init__()
+        self.surf = pygame.Surface((WIDTH, 20))
+        self.surf.fill(GREEN)
+        self.rect = self.surf.get_rect(center = (WIDTH/2, HEIGHT - 10))
 
 
+# game loop 
+def game_loop():
+    # creating player and platform
+    PT1 = platform()
+    P1 = Player() 
+    
+    all_sprites = pygame.sprite.Group()
+    all_sprites.add(PT1)
+    all_sprites.add(P1)
 
+    playing = True 
+    while playing: 
+        for event in pygame.event.get(): 
+            if event.type == QUIT: 
+                pygame.quit() 
+                sys.exit() 
+        
+        displaysurface.fill((0, 0, 0))
 
-
+        for entity in all_sprites: 
+            displaysurface.blit(entity.surf, entity.rect)
+        
+        pygame.display.update() 
+        FramePerSec.tick(FPS)
 
 
 
@@ -77,30 +152,12 @@ SCORE = 0
 HIGH_SCORE = 0 
 MAX_ENEMIES = 3
 
-VOLUME_LEVEL = 5
-PRE_MUTE_VOLUTE = 5
-IS_MUTED = False 
-
 # setting up fonts
 font = pygame.font.SysFont("Verdana", 40)
 font_small = pygame.font.SysFont("Verdana", 30)
 
-# making fullscreen window
-DISPLAYSURF = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-SCREEN_WIDTH, SCREEN_HEIGHT = DISPLAYSURF.get_size()
 
-DISPLAYSURF.fill(WHITE)
-pygame.display.set_caption("star shooter")
-
-# setting the background
-background = pygame.image.load("background.png").convert()
-background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
-
-# playing music
-pygame.mixer.music.load("background.wav")
-pygame.mixer.music.play(-1)  # -1 so it repeats
-pygame.mixer.music.set_volume(VOLUME_LEVEL/10.0)
-
+"""
 # making the player
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -114,7 +171,7 @@ class Player(pygame.sprite.Sprite):
         # creating rectangular hitbox
         self.rect = self.image.get_rect()
         self.rect.center = (SCREEN_WIDTH/2, SCREEN_HEIGHT-200)
-        self.mask = pygame.mask.from_surface(self.image)#pygame.transform.scale(self.image, (65, 160)))
+        self.mask = pygame.mask.from_surface(self.image)
 
     def move(self):
         pressed_keys = pygame.key.get_pressed()
@@ -156,27 +213,22 @@ class Enemy(pygame.sprite.Sprite):
             if not pygame.sprite.spritecollideany(self, enemy_group):
                 valid_position = True 
 
-    def move(self):
-        global SCORE
-        self.rect.move_ip(0, SPEED)
-        if (self.rect.bottom > SCREEN_HEIGHT):
-            SCORE += 1
-            #self.rect.top = 0
-            #self.rect.center = (random.randint(40, SCREEN_WIDTH - 80), 0)
-            self.kill()
+"""
+
+
 
 
 # make a button
 def draw_button(text, x, y, width, height, normal_color, hover_color, mouse_pos):
     rect = pygame.Rect(x, y, width, height)
     if rect.collidepoint(mouse_pos):
-        pygame.draw.rect(DISPLAYSURF, hover_color, rect)
+        pygame.draw.rect(displaysurface, hover_color, rect)
     else:
-        pygame.draw.rect(DISPLAYSURF, normal_color, rect)
+        pygame.draw.rect(displaysurface, normal_color, rect)
 
     text_surf = font_small.render(text, True, WHITE)
     text_rect = text_surf.get_rect(center=rect.center)
-    DISPLAYSURF.blit(text_surf, text_rect)
+    displaysurface.blit(text_surf, text_rect)
     return rect 
 
 
@@ -186,21 +238,21 @@ def home_screen():
         mouse_pos = pygame.mouse.get_pos() 
         
         # background image
-        DISPLAYSURF.blit(background, (0, 0))
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        displaysurface.blit(background, (0, 0))
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         overlay.fill((250, 250, 250, 80)) 
-        DISPLAYSURF.blit(overlay, (0, 0))
+        displaysurface.blit(overlay, (0, 0))
         
         # displaying title and high score
-        title = font.render("Star Shooter", True, WHITE)
-        DISPLAYSURF.blit(title, (SCREEN_WIDTH/2 - title.get_width()/2, 150))
+        title = font.render("Platformer", True, WHITE)
+        displaysurface.blit(title, (WIDTH/2 - title.get_width()/2, 150))
         high_score = font.render(f"High Score: {HIGH_SCORE}", True, WHITE)
-        DISPLAYSURF.blit(high_score, (SCREEN_WIDTH/2 - high_score.get_width()/2, 230))
+        displaysurface.blit(high_score, (WIDTH/2 - high_score.get_width()/2, 230))
 
         # buttons
-        start_btn = draw_button("Start Game", SCREEN_WIDTH/2 - 150, 320, 300, 60, GRAY, DARK_GRAY, mouse_pos)
-        settings_btn = draw_button("Settings", SCREEN_WIDTH/2 - 150, 410, 300, 60, GRAY, DARK_GRAY, mouse_pos)
-        quit_btn = draw_button("Quit", SCREEN_WIDTH/2 - 150, 500, 300, 60, GRAY, DARK_GRAY, mouse_pos)
+        start_btn = draw_button("Start Game", WIDTH/2 - 150, 320, 300, 60, GRAY, DARK_GRAY, mouse_pos)
+        settings_btn = draw_button("Settings", WIDTH/2 - 150, 410, 300, 60, GRAY, DARK_GRAY, mouse_pos)
+        quit_btn = draw_button("Quit", WIDTH/2 - 150, 500, 300, 60, GRAY, DARK_GRAY, mouse_pos)
 
         for event in pygame.event.get():
             if event.type == QUIT: 
@@ -228,26 +280,26 @@ def settings_screen():
         mouse_pos = pygame.mouse.get_pos()
         
         # background
-        DISPLAYSURF.blit(background, (0, 0))
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        displaysurface.blit(background, (0, 0))
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         overlay.fill((250, 250, 250, 80)) 
-        DISPLAYSURF.blit(overlay, (0, 0))
+        displaysurface.blit(overlay, (0, 0))
 
         # displaying title
         title = font.render("Settings", True, BLUE)
-        DISPLAYSURF.blit(title, (SCREEN_WIDTH/2 - title.get_width()/2, 80))
+        displaysurface.blit(title, (WIDTH/2 - title.get_width()/2, 80))
 
         # max number of enemies
         lbl_enemies = font.render("Max enemies: ", True, WHITE)
         num_enemies = font.render(f"{MAX_ENEMIES}", True, WHITE)
         
         row1_total_width = lbl_enemies.get_width() + 60 + 15 + num_enemies.get_width() + 15 + 60
-        start_x1 = SCREEN_WIDTH / 2 - row1_total_width / 2
+        start_x1 = WIDTH / 2 - row1_total_width / 2
         y1 = 220
         
-        DISPLAYSURF.blit(lbl_enemies, (start_x1, y1))
+        displaysurface.blit(lbl_enemies, (start_x1, y1))
         btn_e_minus = draw_button("-", start_x1 + lbl_enemies.get_width(), y1 - 5, 60, 60, GRAY, DARK_GRAY, mouse_pos)
-        DISPLAYSURF.blit(num_enemies, (btn_e_minus.right + 15, y1))
+        displaysurface.blit(num_enemies, (btn_e_minus.right + 15, y1))
         btn_e_plus = draw_button("+", btn_e_minus.right + 15 + num_enemies.get_width() + 15, y1 - 5, 60, 60, GRAY, DARK_GRAY, mouse_pos)
 
         # audio volume
@@ -256,18 +308,18 @@ def settings_screen():
         num_volume = font.render(volume_display_str, True, WHITE)
         
         row2_total_width = lbl_volume.get_width() + 110 + 15 + 60 + 15 + num_volume.get_width() + 15 + 60
-        start_x2 = SCREEN_WIDTH / 2 - row2_total_width / 2
+        start_x2 = WIDTH / 2 - row2_total_width / 2
         y2 = 340
         
-        DISPLAYSURF.blit(lbl_volume, (start_x2, y2))
+        displaysurface.blit(lbl_volume, (start_x2, y2))
         mute_label = "Unmute" if IS_MUTED else "Mute"
         btn_mute = draw_button(mute_label, start_x2 + lbl_volume.get_width(), y2 - 5, 110, 60, GRAY, DARK_GRAY, mouse_pos)
         btn_v_minus = draw_button("-", btn_mute.right + 15, y2 - 5, 60, 60, GRAY, DARK_GRAY, mouse_pos)
-        DISPLAYSURF.blit(num_volume, (btn_v_minus.right + 15, y2))
+        displaysurface.blit(num_volume, (btn_v_minus.right + 15, y2))
         btn_v_plus = draw_button("+", btn_v_minus.right + 15 + num_volume.get_width() + 15, y2 - 5, 60, 60, GRAY, DARK_GRAY, mouse_pos)
 
         # back button
-        btn_back = draw_button("Back to Menu", SCREEN_WIDTH/2 - 150, 480, 300, 60, GRAY, DARK_GRAY, mouse_pos)
+        btn_back = draw_button("Back to Menu", WIDTH/2 - 150, 480, 300, 60, GRAY, DARK_GRAY, mouse_pos)
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -310,107 +362,6 @@ def settings_screen():
         pygame.display.update()
         FramePerSec.tick(FPS)
 
-
-# game loop 
-def game_loop(): 
-    global SPEED, SCORE, HIGH_SCORE
-
-    SPEED = 25
-    SCORE = 0
-    background_y = 0
-
-    enemies = pygame.sprite.Group()
-    all_sprites = pygame.sprite.Group()
-
-    P1 = Player()
-    all_sprites.add(P1)
-
-    # creating event
-    INC_SPEED = pygame.USEREVENT + 1 
-    # call the INC_SPEED object every 1000 ms (=1s)
-    pygame.time.set_timer(INC_SPEED, 2000)
-
-    # spawning enemies
-    SPAWN_ENEMY = pygame.USEREVENT + 2
-    # trying to spawn a new enemy every 1-5 seconds
-    pygame.time.set_timer(SPAWN_ENEMY, random.randint(0, 2000))
-
-    playing = True
-
-    # running the game
-    while playing: 
-        # cycling through the events occuring
-        for event in pygame.event.get():
-            # increasing the speed (every 1 s)
-            if event.type == INC_SPEED:
-                SPEED += 5
-            
-            # spawning enemies
-            if event.type == SPAWN_ENEMY:
-                if len(enemies) < MAX_ENEMIES:
-                    E = Enemy(enemies)
-                    enemies.add(E)
-                    all_sprites.add(E)
-
-                pygame.time.set_timer(SPAWN_ENEMY, random.randint(0, int(10000/SPEED)))
-
-            # quitting
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit() 
-
-        # moving the background 
-        background_y += 5
-        if background_y >= SCREEN_HEIGHT:
-            background_y = 0
-
-        # drqwing the background and score
-        DISPLAYSURF.fill(WHITE)
-        DISPLAYSURF.blit(background, (0, background_y))
-        DISPLAYSURF.blit(background, (0, background_y - SCREEN_HEIGHT))
-
-        scores = font_small.render(f"Score: {str(SCORE)}", True, GREEN)
-        DISPLAYSURF.blit(scores, (40, 40))
-        high_score = font_small.render(f"High score: {str(HIGH_SCORE)}", True, GREEN)
-        DISPLAYSURF.blit(high_score, (40, 80))
-
-        # drawing the entities
-        for entity in all_sprites:
-            DISPLAYSURF.blit(entity.image, entity.rect)
-            entity.move()
-        
-        if SCORE > HIGH_SCORE: 
-                HIGH_SCORE = SCORE 
-            
-        # collision
-        if pygame.sprite.spritecollide(P1, enemies, False, pygame.sprite.collide_mask) :
-            # playing crashing sound
-            pygame.mixer.Sound('crash.wav').play()
-            #time.sleep(0.5)
-
-            # making screen red
-            DISPLAYSURF.fill(RED)
-            game_over = font.render("Game Over", True, BLACK)
-            DISPLAYSURF.blit(game_over, (SCREEN_WIDTH/2 - game_over.get_width()/2, SCREEN_HEIGHT/2))
-            score_go = font.render(f"Score: {str(SCORE)}", True, BLACK)
-            DISPLAYSURF.blit(score_go, (SCREEN_WIDTH/2 - score_go.get_width()/2, 3* SCREEN_HEIGHT/4))
-
-            pygame.display.update()
-
-            # killing all the sprites
-            for entity in all_sprites:
-                # removing sprite from group (-> will no longer be drawn)
-                entity.kill()
-
-            # quiting the game
-            time.sleep(2)
-            playing = False
-
-        # updating the display
-        pygame.display.update()
-        
-        # waiting a bit before 
-        FramePerSec.tick(FPS)
 
 
 # main
